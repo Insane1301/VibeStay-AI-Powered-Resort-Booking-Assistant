@@ -563,13 +563,11 @@ git push origin feature/NewFeature
 
 ---
 
-# 📄 License
+## 📜 License
 
 This project is licensed under the **MIT License**.
 
-You are free to use, modify, and distribute this software with proper attribution.
-
-See the **LICENSE** file for additional details.
+See the [LICENSE](LICENSE) file for details.
 
 ---
 
