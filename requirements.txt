@@ -1,0 +1,23 @@
+# Core AI & GPU Acceleration
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch
+torchvision
+torchaudio
+transformers
+accelerate
+
+# Web API Framework
+fastapi
+uvicorn
+pydantic
+python-multipart
+
+# Voice & Speech Processing
+openai-whisper
+gTTS
+
+# Utilities
+pandas
+datetime
+
+#python-multipart 

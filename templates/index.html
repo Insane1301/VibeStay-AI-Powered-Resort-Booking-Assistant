@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeStay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --forest: #1a2e1a;
+            --deep: #0d1f0d;
+            --moss: #2d4a2d;
+            --sage: #4a7c59;
+            --mint: #7fb08a;
+            --gold: #c9a84c;
+            --gold-light: #e8c97a;
+            --cream: #f5f0e8;
+            --parchment: #ede7d9;
+            --bark: #8b6f47;
+            --shadow: rgba(13,31,13,0.4);
+        }
+
+        html, body {
+            height: 100%; width: 100%;
+            font-family: 'DM Sans', sans-serif;
+            overflow: hidden;
+            background: var(--deep);
+        }
+
+        /* ANIMATED BACKGROUND */
+        .bg-scene {
+            position: fixed; inset: 0; z-index: 0;
+            background: 
+                radial-gradient(ellipse 80% 60% at 20% 110%, rgba(42,74,42,0.7) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% -10%, rgba(74,124,89,0.3) 0%, transparent 50%),
+                radial-gradient(ellipse 100% 50% at 50% 50%, rgba(13,31,13,0.9) 0%, transparent 100%),
+                linear-gradient(160deg, #0a1a0a 0%, #1a2e1a 40%, #0f200f 100%);
+        }
+
+        .bg-scene::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a7c59' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: bgShift 20s linear infinite;
+            opacity: 0.5;
+        }
+
+        @keyframes bgShift { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+
+        /* Floating particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--gold);
+            opacity: 0;
+            animation: float var(--dur, 8s) ease-in-out infinite var(--delay, 0s);
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* MAIN LAYOUT */
+        .app-shell {
+            position: relative; z-index: 10;
+            width: 100vw; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+
+        .chat-window {
+            width: 100%; max-width: 860px;
+            height: calc(100vh - 32px);
+            max-height: 900px;
+            display: flex; flex-direction: column;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(201,168,76,0.25);
+            box-shadow: 
+                0 0 0 1px rgba(201,168,76,0.08),
+                0 40px 80px rgba(0,0,0,0.6),
+                0 0 120px rgba(42,74,42,0.3),
+                inset 0 1px 0 rgba(201,168,76,0.15);
+            backdrop-filter: blur(20px);
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, var(--deep) 0%, var(--forest) 60%, #1e3a1e 100%);
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+            padding: 20px 28px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30 Q50 5 100 30 Q150 55 200 30' stroke='rgba(201,168,76,0.06)' stroke-width='1' fill='none'/%3E%3Cpath d='M0 40 Q50 15 100 40 Q150 65 200 40' stroke='rgba(201,168,76,0.04)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+            background-size: 200px 60px;
+        }
+
+        .header-brand { display: flex; align-items: center; gap: 14px; position: relative; }
+
+        .brand-icon {
+            width: 46px; height: 46px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 20px rgba(201,168,76,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .brand-text h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.45rem; font-weight: 600;
+            color: var(--cream);
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+
+        .brand-text p {
+            font-size: 0.65rem; font-weight: 500;
+            color: var(--gold);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .header-status { display: flex; align-items: center; gap: 10px; position: relative; }
+
+        .speaking-badge {
+            display: none;
+            font-size: 0.65rem; font-weight: 600;
+            color: var(--gold);
+            background: rgba(201,168,76,0.12);
+            border: 1px solid rgba(201,168,76,0.3);
+            padding: 5px 12px; border-radius: 20px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            animation: pulse-badge 1s ease-in-out infinite;
+        }
+        @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            position: relative;
+        }
+        .status-dot span {
+            display: block; width: 10px; height: 10px;
+            border-radius: 50%; background: #4ade80;
+        }
+        .status-dot::before {
+            content: '';
+            position: absolute; inset: -3px;
+            border-radius: 50%;
+            background: rgba(74,222,128,0.3);
+            animation: status-pulse 2s ease-in-out infinite;
+        }
+        @keyframes status-pulse { 0%,100%{transform:scale(1);opacity:0.7} 50%{transform:scale(1.4);opacity:0} }
+
+        /* CHAT BOX */
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 24px 16px;
+            background: 
+                linear-gradient(180deg, rgba(13,31,13,0.97) 0%, rgba(18,36,18,0.97) 100%);
+            scroll-behavior: smooth;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .chat-box::-webkit-scrollbar { width: 4px; }
+        .chat-box::-webkit-scrollbar-track { background: transparent; }
+        .chat-box::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 10px; }
+        .chat-box::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.4); }
+
+        /* MESSAGES */
+        .msg-row {
+            display: flex;
+            animation: msgSlide 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.agent { justify-content: flex-start; }
+
+        @keyframes msgSlide {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .msg-bubble {
+            max-width: 80%;
+            padding: 13px 18px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .msg-bubble.user {
+            background: linear-gradient(135deg, var(--sage) 0%, var(--moss) 100%);
+            color: var(--cream);
+            border-radius: 20px 20px 6px 20px;
+            box-shadow: 0 4px 20px rgba(74,124,89,0.3);
+        }
+
+        .msg-bubble.agent {
+            background: rgba(245,240,232,0.05);
+            border: 1px solid rgba(201,168,76,0.15);
+            color: #d4cfc8;
+            border-radius: 20px 20px 20px 6px;
+            backdrop-filter: blur(10px);
+        }
+
+        .msg-bubble.agent h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem; font-weight: 600;
+            color: var(--gold-light);
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+            padding-bottom: 6px; margin-bottom: 8px; margin-top: 4px;
+            display: block;
+        }
+        .msg-bubble.agent strong { color: var(--mint); font-weight: 600; }
+        .msg-bubble.agent hr { border: 0; border-top: 1px solid rgba(201,168,76,0.1); margin: 10px 0; }
+        .msg-bubble.agent ul { list-style: none; padding-left: 0; }
+        .msg-bubble.agent li::before { content: '◆ '; color: var(--gold); font-size: 0.6em; }
+        .msg-bubble.agent br + br { display: none; }
+
+        /* TYPING INDICATOR */
+        .typing-row { display: flex; justify-content: flex-start; }
+        .typing-bubble {
+            background: rgba(245,240,232,0.05);
+            border: 1px solid rgba(201,168,76,0.15);
+            padding: 14px 18px; border-radius: 20px 20px 20px 6px;
+            display: flex; gap: 5px; align-items: center;
+        }
+        .typing-dot {
+            width: 6px; height: 6px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+        /* WIDGET WRAPPER */
+        .widget-row { display: flex; justify-content: flex-start; animation: msgSlide 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .widget-bubble {
+            max-width: 90%;
+            background: rgba(15,32,15,0.9);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+
+        /* HORIZONTAL CARD SCROLLER AND BUTTONS */
+        .card-scroller-wrap { position: relative; padding: 4px 0 8px; }
+        .scroller-container { position: relative; display: flex; align-items: center; }
+        
+        .scroll-nav-btn {
+            position: absolute; z-index: 10;
+            background: rgba(13,31,13,0.9);
+            border: 1px solid rgba(201,168,76,0.5);
+            color: var(--gold);
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+        
+        .scroll-nav-btn:hover { 
+            background: var(--gold); color: var(--deep); transform: scale(1.1); 
+        }
+        .scroll-nav-btn.left { left: -15px; }
+        .scroll-nav-btn.right { right: -15px; }
+        
+        .card-scroller {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding: 8px 4px 16px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .card-scroller::-webkit-scrollbar { height: 3px; }
+        .card-scroller::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .card-scroller::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.4); border-radius: 10px; }
+
+        .resort-card {
+            min-width: 260px; max-width: 260px;
+            background: rgba(26,46,26,0.95);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 18px;
+            overflow: hidden;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+        }
+        .resort-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(201,168,76,0.5);
+            box-shadow: 0 16px 50px rgba(201,168,76,0.15);
+        }
+
+        .resort-card img {
+            width: 100%; height: 140px; object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        .resort-card:hover img { transform: scale(1.05); }
+        .resort-card .img-wrap { overflow: hidden; position: relative; }
+        .resort-card .img-wrap::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+            background: linear-gradient(transparent, rgba(13,31,13,0.8));
+        }
+
+        .card-body { padding: 14px 16px 16px; }
+        .card-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem; font-weight: 600;
+            color: var(--cream); line-height: 1.2; margin-bottom: 4px;
+        }
+        .card-location { font-size: 0.68rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; }
+        .card-desc { font-size: 0.75rem; color: rgba(212,207,200,0.7); line-height: 1.5; margin-bottom: 12px;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .amenity-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+        .amenity-tag {
+            font-size: 0.6rem; font-weight: 500;
+            background: rgba(127,176,138,0.12);
+            color: var(--mint);
+            border: 1px solid rgba(127,176,138,0.2);
+            padding: 3px 8px; border-radius: 20px;
+            letter-spacing: 0.03em;
+        }
+
+        .card-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--bark) 100%);
+            color: var(--deep);
+            border: none; cursor: pointer;
+            padding: 10px; border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem; font-weight: 700;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+        }
+        .card-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+
+        /* ROOM LIST WIDGET */
+        .widget-inner { padding: 20px; }
+        .widget-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem; font-weight: 600;
+            color: var(--gold-light);
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+            padding-bottom: 10px; margin-bottom: 16px;
+        }
+
+        .room-row {
+            display: flex; gap: 14px; align-items: flex-start;
+            background: rgba(245,240,232,0.03);
+            border: 1px solid rgba(201,168,76,0.1);
+            border-radius: 14px; padding: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-bottom: 10px;
+        }
+        .room-row:hover {
+            background: rgba(201,168,76,0.07);
+            border-color: rgba(201,168,76,0.3);
+            transform: translateX(3px);
+        }
+        .room-row:last-child { margin-bottom: 0; }
+
+        .room-img {
+            width: 90px; height: 70px;
+            border-radius: 10px; object-fit: cover; flex-shrink: 0;
+            border: 1px solid rgba(201,168,76,0.15);
+        }
+
+        .room-info { flex: 1; }
+        .room-name { font-size: 0.92rem; font-weight: 600; color: var(--cream); margin-bottom: 3px; }
+        .room-cap { font-size: 0.65rem; color: var(--mint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+        .room-desc { font-size: 0.72rem; color: rgba(212,207,200,0.6); line-height: 1.4; }
+        .room-price {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem; font-weight: 600;
+            color: var(--gold-light);
+            white-space: nowrap;
+        }
+
+        /* COUNTER WIDGET */
+        .counter-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(245,240,232,0.03);
+            border: 1px solid rgba(201,168,76,0.1);
+            border-radius: 12px; padding: 12px 16px;
+            margin-bottom: 10px;
+        }
+        .counter-label { font-size: 0.85rem; font-weight: 500; color: var(--cream); }
+        .counter-controls { display: flex; align-items: center; gap: 12px; }
+        .counter-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px; border: 1px solid rgba(201,168,76,0.3);
+            background: rgba(201,168,76,0.08);
+            color: var(--gold-light);
+            font-size: 1.1rem; font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .counter-btn:hover { background: rgba(201,168,76,0.2); border-color: var(--gold); }
+        .counter-val { font-size: 1.1rem; font-weight: 700; color: var(--cream); min-width: 24px; text-align: center; }
+
+        /* ACTION BTN */
+        .action-btn {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, var(--sage) 0%, var(--moss) 100%);
+            color: var(--cream);
+            border: none; cursor: pointer; border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-weight: 600;
+            letter-spacing: 0.04em;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(42,74,42,0.4);
+            margin-top: 8px;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(42,74,42,0.5); filter: brightness(1.1); }
+        .action-btn.gold-btn {
+            background: linear-gradient(135deg, var(--gold) 0%, #a87d2a 100%);
+            color: var(--deep); font-weight: 700;
+            box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+        }
+
+        /* FORM INPUTS */
+        .luxury-input {
+            width: 100%;
+            background: rgba(245,240,232,0.04);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 12px;
+            padding: 13px 16px;
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.25s ease;
+            margin-bottom: 10px;
+        }
+        .luxury-input::placeholder { color: rgba(212,207,200,0.35); }
+        .luxury-input:focus {
+            border-color: rgba(201,168,76,0.5);
+            background: rgba(201,168,76,0.05);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+        }
+        .luxury-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; }
+
+        .input-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 6px; display: block; font-weight: 600; }
+
+        /* PRICE SUMMARY */
+        .price-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(201,168,76,0.07); }
+        .price-row:last-child { border-bottom: none; }
+        .price-label { font-size: 0.8rem; color: rgba(212,207,200,0.6); }
+        .price-val { font-size: 0.85rem; font-weight: 500; color: var(--cream); }
+        .price-total .price-label { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--gold-light); font-weight: 600; }
+        .price-total .price-val { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold); }
+
+        .info-card {
+            background: rgba(127,176,138,0.07);
+            border: 1px solid rgba(127,176,138,0.2);
+            border-radius: 12px; padding: 12px 14px;
+            font-size: 0.8rem; color: rgba(212,207,200,0.8);
+            line-height: 1.6; margin-bottom: 14px;
+        }
+
+        .error-card {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 10px; padding: 10px 14px;
+            font-size: 0.78rem; color: #fca5a5;
+            margin: 8px 0; display: none;
+        }
+
+        /* SUCCESS */
+        .success-inner { text-align: center; padding: 24px 20px; }
+        .success-icon {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--sage), var(--moss));
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; margin: 0 auto 16px;
+            box-shadow: 0 8px 30px rgba(74,124,89,0.4);
+        }
+        .success-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem; font-weight: 600;
+            color: var(--gold-light); margin-bottom: 8px;
+        }
+        .success-sub { font-size: 0.82rem; color: rgba(212,207,200,0.7); line-height: 1.6; }
+
+        /* INPUT AREA */
+        .input-area {
+            background: rgba(13,31,13,0.98);
+            border-top: 1px solid rgba(201,168,76,0.15);
+            padding: 16px 20px;
+            flex-shrink: 0;
+        }
+        .input-row { display: flex; gap: 10px; align-items: center; }
+
+        .mic-btn {
+            width: 46px; height: 46px; flex-shrink: 0;
+            border-radius: 14px;
+            background: rgba(201,168,76,0.08);
+            border: 1px solid rgba(201,168,76,0.25);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            color: var(--gold);
+        }
+        .mic-btn:hover { background: rgba(201,168,76,0.15); border-color: var(--gold); }
+        .mic-btn.recording { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5); animation: recPulse 1s infinite; }
+        @keyframes recPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+
+        .text-input-wrap { flex: 1; position: relative; }
+        .text-input {
+            width: 100%;
+            background: rgba(245,240,232,0.05);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 14px;
+            padding: 13px 20px;
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+        .text-input::placeholder { color: rgba(212,207,200,0.3); }
+        .text-input:focus { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.04); }
+
+        .send-btn {
+            width: 46px; height: 46px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--sage) 0%, var(--moss) 100%);
+            border: none; border-radius: 14px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(42,74,42,0.4);
+        }
+        .send-btn:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 6px 20px rgba(42,74,42,0.5); }
+        .send-btn svg { width: 20px; height: 20px; fill: white; }
+
+        /* SCROLL HINT */
+        .scroll-hint {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; padding: 6px 0 2px;
+            font-size: 0.65rem; color: rgba(201,168,76,0.5);
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .scroll-hint-arrow { animation: arrowSlide 1.5s ease-in-out infinite; }
+        @keyframes arrowSlide { 0%,100%{transform:translateX(0)} 50%{transform:translateX(6px)} }
+
+        /* DIVIDER */
+        .nightly-total-row {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px 4px;
+        }
+        .nightly-label { font-size: 0.75rem; font-weight: 600; color: rgba(212,207,200,0.5); text-transform: uppercase; letter-spacing: 0.1em; }
+        .nightly-val {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem; font-weight: 600; color: var(--gold);
+        }
+
+        /* Hide scroll buttons on mobile */
+        @media (max-width: 600px) {
+            .app-shell { padding: 8px; }
+            .chat-window { height: calc(100vh - 16px); max-height: none; border-radius: 18px; }
+            .header { padding: 16px 20px; }
+            .brand-text h1 { font-size: 1.2rem; }
+            .chat-box { padding: 16px 14px 12px; }
+            .widget-inner { padding: 16px; }
+            .scroll-nav-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-scene">
+    <div class="particle" style="left:10%;width:3px;height:3px;--dur:9s;--delay:0s"></div>
+    <div class="particle" style="left:25%;width:2px;height:2px;--dur:12s;--delay:2s"></div>
+    <div class="particle" style="left:50%;width:4px;height:4px;--dur:7s;--delay:4s"></div>
+    <div class="particle" style="left:70%;width:2px;height:2px;--dur:11s;--delay:1s"></div>
+    <div class="particle" style="left:85%;width:3px;height:3px;--dur:8s;--delay:6s"></div>
+    <div class="particle" style="left:40%;width:2px;height:2px;--dur:14s;--delay:3s"></div>
+</div>
+
+<div class="app-shell">
+    <div class="chat-window">
+
+        <div class="header">
+            <div class="header-brand">
+                <div class="brand-icon">🌿</div>
+                <div class="brand-text">
+                    <h1>VibeStay</h1>
+                    <p>Premium Accommodations · 24/7 Support</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <span id="speakingIcon" class="speaking-badge">🔊 Speaking</span>
+                <div class="status-dot"><span></span></div>
+            </div>
+        </div>
+
+        <div id="chat-box" class="chat-box">
+            <div class="msg-row agent">
+                <div class="msg-bubble agent">
+                    Welcome to <strong>VibeStay</strong>. I'm your personal concierge for an unforgettable hotel experience. Try saying <strong>"Show me available resorts"</strong> to begin.
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-row">
+                <button class="mic-btn" id="mic-btn" onclick="toggleRecording()" title="Voice message">
+                    <span id="mic-icon">🎤</span>
+                </button>
+                <div class="text-input-wrap">
+                    <input 
+                        type="text" 
+                        id="user-input" 
+                        class="text-input"
+                        placeholder="Ask about resorts, rooms, or bookings…"
+                        autocomplete="off"
+                    >
+                </div>
+                <button class="send-btn" onclick="sendText()" title="Send">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let mediaRecorder, audioChunks = [], isRecording = false;
+
+    let bookingFlow = {
+        hotelName: null, roomType: null, basePrice: 0, capacity: 2,
+        numberOfRooms: 1, finalPrice: 0, gstAmount: 0, totalAmount: 0,
+        checkIn: null, checkOut: null, numberOfNights: 1,
+        adults: 1, children: 0,
+        guestName: "", email: "", phone: "",
+        unavailableDates: []
+    };
+
+    document.getElementById("user-input").addEventListener("keypress", e => {
+        if (e.key === "Enter") { e.preventDefault(); sendText(); }
+    });
+
+    function formatAgentText(text) {
+        if (!text || text === "undefined") return "Processing your request…";
+        return text
+            .replace(/### (.*?)(?:\n|$)/g, '<h3>$1</h3>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/---/g, '<hr>')
+            .replace(/^\* (.*?)(?:\n|$)/gm, '<li>$1</li>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function scrollToBottom() {
+        const box = document.getElementById('chat-box');
+        box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+    }
+
+    function addMessage(sender, text) {
+        const box = document.getElementById('chat-box');
+        if (!box || !text || text === "undefined") return;
+        const row = document.createElement('div');
+        row.className = `msg-row ${sender === 'User' ? 'user' : 'agent'}`;
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${sender === 'User' ? 'user' : 'agent'}`;
+        bubble.innerHTML = sender === 'Agent' ? formatAgentText(text) : text;
+        row.appendChild(bubble);
+        box.appendChild(row);
+        scrollToBottom();
+    }
+
+    function showTyping() {
+        const box = document.getElementById('chat-box');
+        const row = document.createElement('div');
+        row.id = 'typing-indicator';
+        row.className = 'typing-row';
+        row.innerHTML = `<div class="typing-bubble">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>`;
+        box.appendChild(row);
+        scrollToBottom();
+    }
+
+    function hideTyping() {
+        const el = document.getElementById('typing-indicator');
+        if (el) el.remove();
+    }
+
+    function addWidget(htmlContent) {
+        const box = document.getElementById('chat-box');
+        const row = document.createElement('div');
+        row.className = 'widget-row';
+        const bubble = document.createElement('div');
+        bubble.className = 'widget-bubble';
+        bubble.innerHTML = htmlContent;
+        row.appendChild(bubble);
+        box.appendChild(row);
+        scrollToBottom();
+    }
+
+    async function sendText() {
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if (!text) return;
+        addMessage('User', text);
+        input.value = '';
+        showTyping();
+        try {
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_input: text })
+            });
+            const data = await res.json();
+            hideTyping();
+            handleAgentResponse(data);
+        } catch (err) { hideTyping(); addMessage('Agent', 'Connection failed. Please try again.'); }
+    }
+
+    async function toggleRecording() {
+        const btn = document.getElementById('mic-btn');
+        const icon = document.getElementById('mic-icon');
+        
+        if (!isRecording) {
+            // Check if the browser environment supports media devices (requires HTTPS or Localhost)
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Microphone access is disabled in this environment. Please ensure you are running this on a secure server (HTTPS or localhost).");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = uploadVoice;
+                audioChunks = [];
+                mediaRecorder.start();
+                
+                icon.innerText = '🛑';
+                btn.classList.add('recording');
+                isRecording = true;
+            } catch (err) {
+                console.error("Mic error:", err);
+                alert("Microphone access denied. Please grant microphone permissions in your browser.");
+                
+                // Reset UI safely if it fails
+                isRecording = false;
+                icon.innerText = '🎤';
+                btn.classList.remove('recording');
+            }
+        } else {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            icon.innerText = '🎤';
+            btn.classList.remove('recording');
+            isRecording = false;
+        }
+    }
+
+    async function uploadVoice() {
+        const formData = new FormData();
+        formData.append('file', new Blob(audioChunks, { type: 'audio/wav' }));
+        addMessage('User', '🎤 Voice message');
+        showTyping();
+        try {
+            const res = await fetch('/voice-chat', { method: 'POST', body: formData });
+            hideTyping();
+            const header = res.headers.get('x-agent-reply');
+            try { handleAgentResponse(JSON.parse(header)); } catch (e) { handleAgentResponse({ reply: header }); }
+            const audio = new Audio(URL.createObjectURL(await res.blob()));
+            document.getElementById('speakingIcon').style.display = 'block';
+            audio.onended = () => document.getElementById('speakingIcon').style.display = 'none';
+            audio.play();
+        } catch (err) { hideTyping(); }
+    }
+
+    function handleAgentResponse(data) {
+        const replyText = data.reply || (typeof data === 'string' ? data : '');
+        if (replyText) addMessage('Agent', replyText);
+        if (data.intent === 'DISCOVERY' && data.data && data.data.length > 0) {
+            localStorage.setItem('last_resort_list', JSON.stringify(data.data));
+            renderCards(data.data);
+        }
+    }
+
+    function renderCards(resorts) {
+        const box = document.getElementById('chat-box');
+        const wrap = document.createElement('div');
+        wrap.className = 'card-scroller-wrap';
+
+        const hint = document.createElement('div');
+        hint.className = 'scroll-hint';
+        hint.innerHTML = `<span>Scroll to explore</span><span class="scroll-hint-arrow">→</span>`;
+
+        // Container to hold the scroller and buttons
+        const container = document.createElement('div');
+        container.className = 'scroller-container';
+
+        const scroller = document.createElement('div');
+        scroller.className = 'card-scroller';
+
+        // Left Navigation Button
+        const leftBtn = document.createElement('button');
+        leftBtn.className = 'scroll-nav-btn left';
+        leftBtn.innerHTML = '❮';
+        leftBtn.onclick = () => scroller.scrollBy({ left: -280, behavior: 'smooth' });
+
+        // Right Navigation Button
+        const rightBtn = document.createElement('button');
+        rightBtn.className = 'scroll-nav-btn right';
+        rightBtn.innerHTML = '❯';
+        rightBtn.onclick = () => scroller.scrollBy({ left: 280, behavior: 'smooth' });
+
+        resorts.forEach(resort => {
+            const card = document.createElement('div');
+            card.className = 'resort-card';
+
+            const amenTags = (resort.amenities || []).slice(0, 4)
+                .map(a => `<span class="amenity-tag">${a}</span>`).join('');
+            const extra = resort.amenities && resort.amenities.length > 4
+                ? `<span class="amenity-tag">+${resort.amenities.length - 4}</span>` : '';
+
+            card.innerHTML = `
+                <div class="img-wrap">
+                    <img src="${resort.image_url}" alt="${resort.hotel_name}"
+                        onerror="this.src='https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=500&auto=format&fit=crop'">
+                </div>
+                <div class="card-body">
+                    <div class="card-name">${resort.hotel_name}</div>
+                    <div class="card-location">📍 ${resort.location}</div>
+                    ${resort.description ? `<div class="card-desc">${resort.description}</div>` : ''}
+                    <div class="amenity-tags">${amenTags}${extra}</div>
+                    <button class="card-btn" onclick="selectResort('${resort.hotel_name}')">Explore Rooms →</button>
+                </div>`;
+            scroller.appendChild(card);
+        });
+
+        // Hide/Show buttons dynamically based on scroll position
+        const updateButtons = () => {
+            leftBtn.style.display = scroller.scrollLeft > 0 ? 'flex' : 'none';
+            // 10px buffer to account for rounding errors
+            rightBtn.style.display = scroller.scrollLeft < (scroller.scrollWidth - scroller.clientWidth - 10) ? 'flex' : 'none';
+        };
+        scroller.addEventListener('scroll', updateButtons);
+        setTimeout(updateButtons, 150); // Initial check after render
+
+        // Append everything
+        container.appendChild(leftBtn);
+        container.appendChild(scroller);
+        container.appendChild(rightBtn);
+
+        wrap.appendChild(hint);
+        wrap.appendChild(container);
+        box.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    window.selectResort = function(resortName) {
+        addMessage('User', `Show me rooms at ${resortName}`);
+        const resorts = JSON.parse(localStorage.getItem('last_resort_list'));
+        const resort = resorts.find(r => r.hotel_name === resortName);
+        bookingFlow.hotelName = resort.hotel_name;
+
+        let roomsHtml = `<div class="widget-inner">
+            <div class="widget-title">Available Rooms · ${resortName}</div>`;
+
+        resort.room_types.forEach(room => {
+            const img = room.image_url || 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=500&auto=format&fit=crop';
+            roomsHtml += `
+                <div class="room-row" onclick="askGuests('${room.type}', ${room.price}, ${room.capacity || 2})">
+                    <img src="${img}" class="room-img" onerror="this.src='https://images.unsplash.com/photo-1590490360182-c33d57733427?w=200&h=150&fit=crop'">
+                    <div class="room-info">
+                        <div class="room-name">${room.type}</div>
+                        <div class="room-cap">👥 Capacity: ${room.capacity || 2} adults</div>
+                        ${room.description ? `<div class="room-desc">${room.description}</div>` : ''}
+                    </div>
+                    <div class="room-price">₹${room.price}</div>
+                </div>`;
+        });
+        roomsHtml += `</div>`;
+        setTimeout(() => addWidget(roomsHtml), 400);
+    }
+
+    window.askGuests = function(roomType, basePrice, capacity) {
+        bookingFlow.roomType = roomType;
+        bookingFlow.basePrice = basePrice;
+        bookingFlow.capacity = capacity;
+        bookingFlow.adults = 1;
+        bookingFlow.children = 0;
+        addMessage('User', `I'd like the ${roomType}`);
+
+        const html = `<div class="widget-inner">
+            <div class="widget-title">Number of Guests</div>
+            <div class="counter-row">
+                <span class="counter-label">Adults</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="updateGuest('adults',-1)">−</button>
+                    <span class="counter-val" id="adult-count">1</span>
+                    <button class="counter-btn" onclick="updateGuest('adults',1)">+</button>
+                </div>
+            </div>
+            <div class="counter-row">
+                <span class="counter-label">Children</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="updateGuest('children',-1)">−</button>
+                    <span class="counter-val" id="child-count">0</span>
+                    <button class="counter-btn" onclick="updateGuest('children',1)">+</button>
+                </div>
+            </div>
+            <button class="action-btn" onclick="suggestRooms()">Calculate Rooms →</button>
+        </div>`;
+        setTimeout(() => addWidget(html), 400);
+    }
+
+    window.updateGuest = function(type, change) {
+        if (type === 'adults') {
+            bookingFlow.adults = Math.max(1, bookingFlow.adults + change);
+            document.getElementById('adult-count').innerText = bookingFlow.adults;
+        } else {
+            bookingFlow.children = Math.max(0, bookingFlow.children + change);
+            document.getElementById('child-count').innerText = bookingFlow.children;
+        }
+    }
+
+    window.suggestRooms = function() {
+        addMessage('User', `${bookingFlow.adults} adults, ${bookingFlow.children} children`);
+        const minRooms = Math.ceil(bookingFlow.adults / bookingFlow.capacity);
+        bookingFlow.numberOfRooms = minRooms;
+
+        const note = minRooms > 1
+            ? `${bookingFlow.adults} adults require ${minRooms} rooms (capacity: ${bookingFlow.capacity}/room).`
+            : `${bookingFlow.adults} adult fits in 1 ${bookingFlow.roomType} (capacity: ${bookingFlow.capacity}).`;
+
+        const html = `<div class="widget-inner">
+            <div class="widget-title">Room Configuration</div>
+            <div class="info-card">🌿 ${note}</div>
+            <div class="counter-row">
+                <span class="counter-label">Rooms Required</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="updateRooms(-1,${minRooms})">−</button>
+                    <span class="counter-val" id="room-count">${minRooms}</span>
+                    <button class="counter-btn" onclick="updateRooms(1,${minRooms})">+</button>
+                </div>
+            </div>
+            <div class="nightly-total-row">
+                <span class="nightly-label">Total per Night</span>
+                <span class="nightly-val">₹<span id="nightly-total">${minRooms * bookingFlow.basePrice}</span></span>
+            </div>
+            <button class="action-btn" onclick="proceedToDates()">Select Dates →</button>
+        </div>`;
+        setTimeout(() => addWidget(html), 400);
+    }
+
+    window.updateRooms = function(change, min) {
+        bookingFlow.numberOfRooms = Math.max(min, bookingFlow.numberOfRooms + change);
+        document.getElementById('room-count').innerText = bookingFlow.numberOfRooms;
+        document.getElementById('nightly-total').innerText = bookingFlow.numberOfRooms * bookingFlow.basePrice;
+    }
+
+    window.proceedToDates = async function() {
+        addMessage('User', `I need ${bookingFlow.numberOfRooms} room(s)`);
+        showTyping();
+        const res = await fetch('/get-booked-dates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hotel_name: bookingFlow.hotelName, room_type: bookingFlow.roomType })
+        });
+        const data = await res.json();
+        bookingFlow.unavailableDates = data.booked_dates;
+        hideTyping();
+
+        const today = new Date().toISOString().split('T')[0];
+        const html = `<div class="widget-inner">
+            <div class="widget-title">Select Your Dates</div>
+            <div style="margin-bottom:10px">
+                <span class="input-label">Check-in</span>
+                <input type="date" id="widget-cin" min="${today}" class="luxury-input" onchange="validateDates()">
+            </div>
+            <div style="margin-bottom:10px">
+                <span class="input-label">Check-out</span>
+                <input type="date" id="widget-cout" min="${today}" class="luxury-input" onchange="validateDates()">
+            </div>
+            <div class="error-card" id="date-err"></div>
+            <button class="action-btn" onclick="confirmDatesAndContact()">Continue to Details →</button>
+        </div>`;
+        addWidget(html);
+    }
+
+    window.validateDates = function() {
+        const cin = document.getElementById('widget-cin')?.value;
+        const cout = document.getElementById('widget-cout')?.value;
+        const err = document.getElementById('date-err');
+        if (!err) return true;
+        if (cin && cout && cin >= cout) {
+            err.innerText = 'Check-out must be after check-in.'; err.style.display = 'block'; return false;
+        }
+        if (cin && cout) {
+            const overlap = bookingFlow.unavailableDates.some(b => {
+                return Math.max(new Date(cin), new Date(b.check_in)) < Math.min(new Date(cout), new Date(b.check_out));
+            });
+            if (overlap) {
+                err.innerText = 'These dates are unavailable. Please choose different dates.';
+                err.style.display = 'block'; return false;
+            }
+        }
+        err.style.display = 'none'; return true;
+    }
+
+    window.confirmDatesAndContact = function() {
+        const cin = document.getElementById('widget-cin')?.value;
+        const cout = document.getElementById('widget-cout')?.value;
+        if (!cin || !cout) return alert('Please select both dates');
+        if (!validateDates()) return;
+
+        bookingFlow.checkIn = cin; bookingFlow.checkOut = cout;
+        bookingFlow.numberOfNights = Math.ceil((new Date(cout) - new Date(cin)) / 86400000);
+        bookingFlow.finalPrice = bookingFlow.basePrice * bookingFlow.numberOfRooms * bookingFlow.numberOfNights;
+        bookingFlow.gstAmount = Math.round(bookingFlow.finalPrice * 0.18);
+        bookingFlow.totalAmount = bookingFlow.finalPrice + bookingFlow.gstAmount;
+
+        addMessage('User', `${cin} → ${cout} (${bookingFlow.numberOfNights} nights)`);
+
+        const html = `<div class="widget-inner">
+            <div class="widget-title">Guest Details</div>
+            <input type="text" id="widget-name" placeholder="Full Name" class="luxury-input">
+            <input type="email" id="widget-email" placeholder="Email Address" class="luxury-input">
+            <input type="tel" id="widget-phone" placeholder="Phone Number" class="luxury-input" style="margin-bottom:0">
+            <button class="action-btn" style="margin-top:14px" onclick="confirmDetails()">Review Booking →</button>
+        </div>`;
+        setTimeout(() => addWidget(html), 400);
+    }
+
+    window.confirmDetails = function() {
+        const name = document.getElementById('widget-name')?.value;
+        const email = document.getElementById('widget-email')?.value;
+        const phone = document.getElementById('widget-phone')?.value;
+        if (!name || !email || !phone) return alert('Please fill all fields');
+
+        bookingFlow.guestName = name; bookingFlow.email = email; bookingFlow.phone = phone;
+        addMessage('User', 'Details confirmed');
+
+        const html = `<div class="widget-inner">
+            <div class="widget-title">Booking Summary</div>
+            <div style="background:rgba(245,240,232,0.03);border:1px solid rgba(201,168,76,0.1);border-radius:14px;padding:16px;margin-bottom:16px">
+                <div class="price-row"><span class="price-label">Resort</span><span class="price-val">${bookingFlow.hotelName}</span></div>
+                <div class="price-row"><span class="price-label">Room</span><span class="price-val">${bookingFlow.numberOfRooms}× ${bookingFlow.roomType}</span></div>
+                <div class="price-row"><span class="price-label">Dates</span><span class="price-val">${bookingFlow.checkIn} → ${bookingFlow.checkOut}</span></div>
+                <div class="price-row"><span class="price-label">Duration</span><span class="price-val">${bookingFlow.numberOfNights} nights</span></div>
+                <div class="price-row"><span class="price-label">Guests</span><span class="price-val">${bookingFlow.adults} adults, ${bookingFlow.children} children</span></div>
+                <div class="price-row"><span class="price-label">Name</span><span class="price-val">${bookingFlow.guestName}</span></div>
+                <div style="border-top:1px solid rgba(201,168,76,0.1);margin:12px 0"></div>
+                <div class="price-row"><span class="price-label">Base Amount</span><span class="price-val">₹${bookingFlow.finalPrice}</span></div>
+                <div class="price-row"><span class="price-label">GST (18%)</span><span class="price-val">₹${bookingFlow.gstAmount}</span></div>
+                <div class="price-row price-total" style="padding-top:10px;margin-top:4px;border-top:1px solid rgba(201,168,76,0.15)">
+                    <span class="price-label">Grand Total</span>
+                    <span class="price-val">₹${bookingFlow.totalAmount}</span>
+                </div>
+            </div>
+            <button class="action-btn gold-btn" onclick="payNow()">
+                🔐 Pay ₹${bookingFlow.totalAmount} Securely
+            </button>
+        </div>`;
+        setTimeout(() => addWidget(html), 400);
+    }
+
+    window.payNow = async function() {
+        const res = await fetch('/create-payment-order', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_id: 1001, amount: bookingFlow.totalAmount })
+        });
+        const order = await res.json();
+        const options = {
+            key: order.key_id, amount: order.amount * 100, currency: 'INR',
+            name: 'VibeStay', order_id: order.order_id,
+            handler: async function(response) {
+                const confirmRes = await fetch('/verify-and-confirm', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        booking_id: order.order_id.substring(6, 12),
+                        guest_name: bookingFlow.guestName, email: bookingFlow.email,
+                        phone: bookingFlow.phone, adults: bookingFlow.adults, children: bookingFlow.children,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        check_in: bookingFlow.checkIn, check_out: bookingFlow.checkOut,
+                        hotel_name: bookingFlow.hotelName, room_type: bookingFlow.roomType
+                    })
+                });
+                const final = await confirmRes.json();
+                if (final.status === 'confirmed') {
+                    addWidget(`<div class="success-inner">
+                        <div class="success-icon">✓</div>
+                        <div class="success-title">Booking Confirmed</div>
+                        <div class="success-sub">
+                            Ref: <strong style="color:var(--gold)">${response.razorpay_payment_id}</strong><br><br>
+                            Thank you, <strong style="color:var(--cream)">${bookingFlow.guestName}</strong>.<br>
+                            Confirmation sent to <strong style="color:var(--mint)">${bookingFlow.email}</strong>.
+                        </div>
+                    </div>`);
+                }
+            },
+            theme: { color: '#4a7c59' }
+        };
+        new Razorpay(options).open();
+    }
+</script>
+</body>
+</html>
+
+```
